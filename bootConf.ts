@@ -39,7 +39,7 @@ async function runCommand(cmd: ToString[]): Promise<string> {
 async function getBootEntries(): Promise<BootEntry[]> {
     const output = await runCommand(["efibootmgr"]);
     const entries: BootEntry[] = [];
-    const regex = /^Boot(\d+)\*? - (.*)$/g;
+    const regex = /^Boot(\d+)\*? (.*)$/gm;
     let match;
     while ((match = regex.exec(output)) !== null) {
         entries.push({
