@@ -6,8 +6,8 @@ interface Config {
 };
 
 interface KernelConfig {
-    boot_name: string;
-    kernel_name: string;
+    name: string;
+    kernel: string;
     cmdline: string;
 }
 
@@ -26,6 +26,7 @@ interface ToString {
 };
 
 async function runCommand(cmd: ToString[]): Promise<string> {
+    console.log("> " + cmd.join(" "));
     const proc = Deno.run({
         cmd: cmd.map((s) => s.toString()),
         stdout: "piped",
@@ -74,16 +75,19 @@ async function getCmdline(kernel: KernelConfig): Promise<string> {
 }
 
 async function updateEntry(entries: BootEntry[], system: SystemConfig, kernel: KernelConfig) {
-    const entry = entries.find((e) => e.name === kernel.boot_name);
+    const entry = entries.find((e) => e.name === kernel.name);
     let boot_num_args: ToString[] = [];
     if (entry !== undefined) {
+        console.log("Updating entry: " + entry.name);
         boot_num_args = ["--bootnum", entry.num];
         await runCommand(["efibootmgr", ...boot_num_args, "--delete-bootnum", ...systemArgs(system)]);
+    } else {
+        console.log("Creating entry: " + kernel.name);
     }
 
     await runCommand([
         "efibootmgr", ...boot_num_args, ...systemArgs(system),
-        "--create", "--loader", kernel.kernel_name, "--unicode", getCmdline(kernel)]);
+        "--create", "--label", kernel.name, "--loader", kernel.kernel, "--unicode", await getCmdline(kernel)]);
 }
 
 async function main() {
